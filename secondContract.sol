@@ -5,17 +5,23 @@ pragma solidity 0.8.9;
 
 import "./proxiable.sol";
 
-contract Token is Proxiable {
+contract Token2 is Proxiable {
     uint256 TotalSupply;
     string TokenName;
     string TokenSymbol;
     bool public initialized;
-    address public owner;
+    address owner;
 
 
     mapping(address => uint256) balances;
     //Approver to aprovee to amount approved
     mapping(address => mapping(address => uint256)) Approve;  
+
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner is allowed to perform this action");
+        _;
+    }
 
     function initialize() public{
         require(!initialized, "Contract already initialized");
@@ -24,13 +30,17 @@ contract Token is Proxiable {
         TokenSymbol = "FST";
         TotalSupply = 2000 * (10**18);
         mint(0x924843c0c1105b542c7e637605f95F40FD07b4B0);
-        owner = msg.sender;
+        setOwner(msg.sender);
     }
 
     function ConstructData() public pure returns(bytes memory data ){
+
         data = abi.encodeWithSignature("initialize()");
     }
 
+    function setOwner(address _owner) internal {
+        owner = _owner;
+    }
 
     function mint(address _addr) internal {
         balances[_addr] += TotalSupply;
@@ -61,9 +71,13 @@ contract Token is Proxiable {
         return(Approve[msg.sender][_addr]);
     }
 
+    function burn(address _addr) public onlyOwner{
+        uint256 amount = 1 * (10**18);
+        balances[_addr] -= amount;
+    }
+
     function upgradeable(address _newAddress) public {
         require(msg.sender == owner, "You are not allowed to upgrade");
         updateCodeAddress(_newAddress);
     }
-
 }
